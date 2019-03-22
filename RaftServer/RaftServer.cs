@@ -47,11 +47,8 @@ namespace RaftServer
             _raftDiagnostic = raftDiagnostic ?? new DummyDiagnostics();
         }
 
-
-        // ReSharper disable once UnusedMember.Global
         public async Task Run(CancellationToken ct)
         {
-            //Load config
             var config = _raftSerializer.Deserialize<RaftConfig>(_storage.Read("config"));
             foreach (var peer in config.Peers)
                 _peers.Add(peer);
@@ -95,18 +92,18 @@ namespace RaftServer
                         throw new Exception("Unknown RaftState " + Enum.GetName(_state.GetType(), _state));
                 }
             }
-            //cleanup
-            return;
         }
 
         private async Task LeaderLoop(CancellationToken ct)
         {
-            //Registerara statemachine callbacks för join
+            _statemachine.RegisterCommand("join", _ => null); //TODO Is this a good way
+            _statemachine.RegisterCommand("leave", _ => null);
             long heartbeat = _heartbeat;
             var watch = new Stopwatch();
             watch.Start();
             var lastCheck = watch.ElapsedMilliseconds;
-            _nextIndex = _peers.ToDictionary(p => p, p => _log.LastEntry().index + 1);
+            var lastIndex = _log.LastEntry().index + 1;
+            _nextIndex = _peers.ToDictionary(p => p, p => lastIndex);
             _matchIndex = _peers.ToDictionary(p => p, p => 0UL);
             _quorum = new HashSet<string>{_me};
             SendHeartbeats();
@@ -160,7 +157,7 @@ namespace RaftServer
                             }
 
                             var quorumCount = _quorum.Count;
-                            if (quorumCount << 1 > _peers.Count + 1)
+                            if (quorumCount << 1 > _peers.Count + 1) //Can we cache this? In the case of to many peers failing commit index will not rise.
                             {
                                 _raftDiagnostic?.Message($"We have quorum, check commit {_matchIndex.Count} {quorumCount}", LogLevel.Verbose);
                                 var allIndexes = _matchIndex.Values.Select(v => v).ToList();
@@ -364,7 +361,7 @@ namespace RaftServer
         {
             try
             {
-                var (_, index) = _log.LastEntry();
+                var index = _log.LastEntry().index;
                 foreach (var peer in _peers)
                 {
                     var entries = _nextIndex.TryGetValue(peer, out var fromIndex) ? _log.GetEntries(fromIndex, index, 50) : new List<IRaftEntry>();
@@ -381,21 +378,6 @@ namespace RaftServer
                 _raftDiagnostic?.Message($"[SendHeartbeats] We got an exception! {ex}", LogLevel.Error);
             }
 
-        }
-    }
-
-    internal class DummyDiagnostics : IRaftDiagnostic {
-
-        public void LoadedConfig(RaftConfig config)
-        {
-        }
-
-        public void EnterState(RaftState state)
-        {
-        }
-
-        public void Message(string message, LogLevel loglevel)
-        {
         }
     }
 }

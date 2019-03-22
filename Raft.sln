@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.489
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Raft", "Raft\Raft.csproj", "{40872671-87DC-4E60-8FBD-84EBA5CCFC33}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raft", "Raft\Raft.csproj", "{40872671-87DC-4E60-8FBD-84EBA5CCFC33}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaftServer", "RaftServer\RaftServer.csproj", "{F35BDF58-316D-44C8-B70E-F5D6A247ED20}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaftServer", "RaftServer\RaftServer.csproj", "{F35BDF58-316D-44C8-B70E-F5D6A247ED20}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaftClient", "RaftClient\RaftClient.csproj", "{2972D248-ED4B-44D8-BB4D-3BC7CE0101BC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaftClient", "RaftClient\RaftClient.csproj", "{2972D248-ED4B-44D8-BB4D-3BC7CE0101BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaftCommon", "RaftCommon\RaftCommon.csproj", "{61EE6974-BE7F-4878-B98D-9C97C3141C93}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaftCommon", "RaftCommon\RaftCommon.csproj", "{61EE6974-BE7F-4878-B98D-9C97C3141C93}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
