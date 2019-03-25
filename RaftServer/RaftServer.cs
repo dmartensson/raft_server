@@ -251,7 +251,8 @@ namespace RaftServer
                             break;
 
                         case RaftCommand command:
-                            //Meddela att ledarval pågår
+                            //Leader election in progress, should we await result or tell the client to retry? 
+                            //Depends on if the client should try other peers automatically or only when redirected by response?
                             break;
                     }
 
