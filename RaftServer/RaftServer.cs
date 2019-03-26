@@ -138,6 +138,7 @@ namespace RaftServer
                             _log.Append(new RaftEntry(command.Client, _currentTerm, _log.NextIndex(), command.CommandGuid, command.Command, command.Data));
                             continue;
                         case AppendEntriesResponse appendEntriesResponse:
+                            var peerNextIndex = appendEntriesResponse.LogIndex + 1;
                             if (appendEntriesResponse.Success)
                             {
                                 if (appendEntriesResponse.LogIndex > _matchIndex[peer])
@@ -145,14 +146,19 @@ namespace RaftServer
                                     _raftDiagnostic?.Message($"Peer '{peer}' successfully appended {appendEntriesResponse.LogIndex}", LogLevel.Basic);
                                 }
 
-                                _nextIndex[peer] = appendEntriesResponse.LogIndex + 1;
+                                if (peerNextIndex > _nextIndex[peer])
+                                {
+                                    _nextIndex[peer] = peerNextIndex;
+                                    _raftDiagnostic?.Message($"Update nextIndex[{peer}] to {peerNextIndex}", LogLevel.Basic);
+                                }
+
                                 _matchIndex[peer] = appendEntriesResponse.LogIndex;
                                 _quorum.Add(peer);
                             }
                             else
                             {
                                 _raftDiagnostic?.Message($"Peer '{peer}' failed to append, peer last index is {appendEntriesResponse.LogIndex}", LogLevel.Warning);
-                                _nextIndex[peer] = appendEntriesResponse.LogIndex + 1;
+                                _nextIndex[peer] = peerNextIndex;
                                 _matchIndex[peer] = appendEntriesResponse.LogIndex;
                             }
 
@@ -319,10 +325,12 @@ namespace RaftServer
                                 continue;
                             }
 
+                            var lastindex = _log.LastEntry().index;
+                            _raftDiagnostic?.Message($"Got {appendEntriesRequest.Entries.Count} new entries", LogLevel.Basic);
                             if (!_log.HasEntry(appendEntriesRequest.PrevLogTerm, appendEntriesRequest.PrevLogIndex))
                             {
                                 _raftDiagnostic?.Message($"We cannot append entries from {peer}, our log is to old", LogLevel.Warning);
-                                _transport.Send(peer, new AppendEntriesResponse(_currentTerm, false, _log.LastEntry().index));
+                                _transport.Send(peer, new AppendEntriesResponse(_currentTerm, false, lastindex));
                                 continue;
                             }
 
@@ -365,7 +373,9 @@ namespace RaftServer
                 var index = _log.LastEntry().index;
                 foreach (var peer in _peers)
                 {
-                    var entries = _nextIndex.TryGetValue(peer, out var fromIndex) ? _log.GetEntries(fromIndex, index, 50) : new List<IRaftEntry>();
+                    var entries = _nextIndex.TryGetValue(peer, out var fromIndex) 
+                        ? _log.GetEntries(fromIndex, index, 50) 
+                        : new List<IRaftEntry>();
                     if (entries.Any())
                     {
                         _raftDiagnostic?.Message($"Sending {entries.Count} entries to {peer}", LogLevel.Basic);

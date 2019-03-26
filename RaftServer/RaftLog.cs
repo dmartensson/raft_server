@@ -51,9 +51,12 @@ namespace RaftServer
 
         public List<IRaftEntry> GetEntries(ulong fromLogIndex, ulong toLogIndex, int maxEntries)
         {
-            if (toLogIndex <= fromLogIndex)
+            if (toLogIndex < fromLogIndex)
                 return new List<IRaftEntry>();
-            return _log.Where(l => l.LogIndex >= fromLogIndex && l.LogIndex <= toLogIndex).OrderBy(l => l.LogIndex).Take(maxEntries).ToList();
+            return _log.Where(l => l.LogIndex >= fromLogIndex && l.LogIndex <= toLogIndex)
+                       .OrderBy(l => l.LogIndex)
+                       .Take(maxEntries)
+                       .ToList();
         }
 
         public ulong NextIndex()
