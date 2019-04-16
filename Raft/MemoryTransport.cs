@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using RaftServer;
 
-namespace RaftServer
+namespace Raft
 {
-    // ReSharper disable once UnusedMember.Global
-    public class MemoryTransport : IRaftTransport
+    public class MemoryTransport
     {
         private readonly Dictionary<string, AsyncQueue<(string peer, RaftMessage message)>> _buckets = new Dictionary<string, AsyncQueue<(string peer, RaftMessage message)>>();
         private readonly IRaftDiagnostic _raftDiagnostic;
@@ -26,22 +25,6 @@ namespace RaftServer
             return bucket;
         }
 
-        public void Send(string peer, RaftMessage message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<(string peer, RaftMessage message)> Get(CancellationToken ct, TimeSpan timeout)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ReQueue(string peer, RaftMessage message)
-        {
-            throw new NotImplementedException();
-        }
-
-        // ReSharper disable once UnusedMember.Global
         public IRaftTransport GetPeerTransport(string me)
         {
             return new PeerTransport(me, GetBucket(me), GetBucket, _raftDiagnostic);
@@ -77,7 +60,7 @@ namespace RaftServer
                 }
                 try
                 {
-                    return await _queue.DequeueAsync((int) timeout.TotalMilliseconds, ct);
+                    return await _queue.DequeueAsync((int)timeout.TotalMilliseconds, ct);
 
                 }
                 catch (TaskCanceledException)
@@ -90,47 +73,6 @@ namespace RaftServer
             {
                 _requeue.Enqueue((peer, message));
             }
-        }
-    }
-
-    public class AsyncQueue<T>
-    {
-        private readonly SemaphoreSlim _sem;
-        private readonly ConcurrentQueue<T> _que;
-
-        public AsyncQueue(ConcurrentQueue<T> queue = null)
-        {
-            _sem = new SemaphoreSlim(0);
-            _que = queue ?? new ConcurrentQueue<T>();
-        }
-
-        public void Enqueue(T item)
-        {
-            _que.Enqueue(item);
-            _sem.Release();
-        }
-
-        public void EnqueueRange(IEnumerable<T> source)
-        {
-            var n = 0;
-            foreach (var item in source)
-            {
-                _que.Enqueue(item);
-                n++;
-            }
-            _sem.Release(n);
-        }
-
-        public async Task<T> DequeueAsync(int timeout, CancellationToken cancellationToken = default(CancellationToken))
-        {
-                await _sem.WaitAsync(timeout, cancellationToken);
-
-                if (_que.TryDequeue(out var item))
-                {
-                    return item;
-                }
-
-                return default(T);
         }
     }
 }

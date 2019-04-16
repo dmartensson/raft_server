@@ -2,7 +2,7 @@
 
 namespace RaftServer
 {
-    internal class DummyDiagnostics : IRaftDiagnostic {
+    public class DummyDiagnostics : IRaftDiagnostic {
 
         public void LoadedConfig(RaftConfig config)
         {

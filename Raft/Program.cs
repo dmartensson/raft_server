@@ -12,11 +12,11 @@ namespace Raft
     {
         const int Heartbeat = 50;
 
-        static async Task Main()
+        private static async Task Main()
         {
-            var logLevel = LogLevel.Basic;
+            const LogLevel logLevel = LogLevel.Basic;
             var watch = Stopwatch.StartNew();
-            var transport = new MemoryTransport(new Diagnostic("transport", watch, logLevel)); //
+            var transport = new MemoryTransport(new Diagnostic("transport", watch, logLevel)); 
             var serializer = new ProtoBufSerializer();
             var s1 = new MemoryStorage();
             s1.Write("config", serializer.Serialize(new RaftConfig(new List<string> {"s2", "s3"}, "s1", Heartbeat)));
@@ -59,7 +59,7 @@ namespace Raft
             await client.Command("put", serializer.Serialize("Hello World"), ct);
 
             Console.WriteLine("Press enter to quit");
-            string input = Console.ReadLine();
+            var input = Console.ReadLine();
             while (!string.IsNullOrWhiteSpace(input))
             {
                 await client.Command("put", serializer.Serialize(input), ct);
@@ -69,61 +69,4 @@ namespace Raft
             Task.WaitAll(p1, p2, p3);
         }
     }
-
-    class MemoryStorage : IRaftStorage
-    {
-        private readonly Dictionary<string, byte[]> _storage = new Dictionary<string, byte[]>();
-        public void Write(string name, byte[] data)
-        {
-            _storage.Add(name, data);
-        }
-
-        public byte[] Read(string name)
-        {
-            return _storage.TryGetValue(name, out var data) ? data : null;
-        }
-
-        public void Append(string name, byte[] data)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Delete(string name)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    class Diagnostic : IRaftDiagnostic {
-        private readonly string _me;
-        private readonly Stopwatch _watch;
-        private readonly LogLevel _logLevel;
-
-        public Diagnostic(string me, Stopwatch watch = null, LogLevel logLevel = LogLevel.Warning)
-        {
-            _me = me;
-            _watch = watch ?? Stopwatch.StartNew();
-            Console.WriteLine($"Diagnostic for {_me}");
-            _logLevel = logLevel;
-        }
-        public void LoadedConfig(RaftConfig config)
-        {
-            Console.WriteLine($"({_watch.ElapsedMilliseconds}){_me}-config: {config.Me}, {string.Join(",", config.Peers)}");
-
-        }
-
-        public void EnterState(RaftState state)
-        {
-            Console.WriteLine($"({_watch.ElapsedMilliseconds}){_me}-state: {Enum.GetName(typeof(RaftState), state)}");
-        }
-
-        public void Message(string message, LogLevel loglevel)
-        {
-            if ((int)loglevel <= (int)_logLevel)
-            {
-                Console.WriteLine($"({_watch.ElapsedMilliseconds}){_me}: {message}");
-            }
-        }
-    }
-
 }
